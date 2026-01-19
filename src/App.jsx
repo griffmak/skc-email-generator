@@ -130,7 +130,7 @@ const AIEmailGenerator = () => {
       // Step 1: Research the company using web search
       const searchQuery = `${companyName} recent news partnership expansion`;
       
-      const searchResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      const searchResponse = await fetch('/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ Format as JSON:
   "recommendation": "Which approach to use and why"
 }`;
 
-      const emailResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      const emailResponse = await fetch('/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
