@@ -140,7 +140,7 @@ const AIEmailGenerator = () => {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `Search for recent news and information about "${companyName}". Focus on: recent announcements, expansions, partnerships, executive changes, funding rounds, business developments. Provide a concise summary of what you find.`
+            content: `Search for news and information about "${companyName}" from the LAST 12 MONTHS ONLY. Focus on: recent announcements, expansions, partnerships, executive changes, funding rounds, business developments, financial results, strategic initiatives. Provide a concise summary of what you find, prioritizing the most recent developments.`
           }],
           tools: [{
             type: 'web_search_20250305',
@@ -206,6 +206,8 @@ For each email:
 
 Use the research findings to personalize. Reference specific news/developments when relevant. Connect their business to the rightsholder's differentiators naturally.
 
+CRITICAL: Return ONLY valid JSON with no markdown formatting, no code fences, no extra text. Just the raw JSON object.
+
 Format as JSON:
 {
   "conservative": {"subject": "", "body": "", "reasoning": "", "confidence": 0},
@@ -244,19 +246,24 @@ Format as JSON:
       // Try to parse JSON, fallback to text if fails
       let parsedDrafts;
       try {
-        const jsonMatch = draftsText.match(/\{[\s\S]*\}/);
+        // Remove markdown code fences if present
+        let cleanedText = draftsText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+        
+        // Extract JSON object
+        const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           parsedDrafts = JSON.parse(jsonMatch[0]);
+          
+          // Validate that we have the expected structure
+          if (!parsedDrafts.conservative || !parsedDrafts.valueFocused || !parsedDrafts.bold) {
+            throw new Error('Invalid JSON structure');
+          }
         } else {
-          // Fallback structure
-          parsedDrafts = {
-            conservative: { subject: 'Partnership Opportunity', body: draftsText, reasoning: 'AI-generated draft', confidence: 7 },
-            valueFocused: { subject: 'Partnership Opportunity', body: draftsText, reasoning: 'AI-generated draft', confidence: 7 },
-            bold: { subject: 'Partnership Opportunity', body: draftsText, reasoning: 'AI-generated draft', confidence: 7 },
-            recommendation: 'Review all variations'
-          };
+          throw new Error('No JSON found in response');
         }
       } catch (e) {
+        console.error('Error parsing email drafts:', e);
+        // Fallback structure
         parsedDrafts = {
           conservative: { subject: 'Partnership Opportunity', body: draftsText, reasoning: 'AI-generated draft', confidence: 7 },
           valueFocused: { subject: 'Partnership Opportunity', body: draftsText, reasoning: 'AI-generated draft', confidence: 7 },
